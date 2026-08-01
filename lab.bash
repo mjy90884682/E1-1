@@ -2,6 +2,14 @@
 set -Eeuo pipefail
 
 readonly SERVICE="workstation"
+readonly -a STEPS=(
+  scripts/10-cli-and-permissions.bash
+  scripts/20-environment-and-docker.bash
+  scripts/30-custom-image.bash
+  scripts/40-storage.bash
+  scripts/50-git.bash
+  scripts/60-browser-evidence.bash
+)
 
 usage() {
   cat <<'EOF'
@@ -25,16 +33,26 @@ wait_until_ready() {
   printf ' ready\n'
 }
 
+prepare_runtime() {
+  mkdir -p volumes/bind-mount .local/evidence
+}
+
 command="${1:-}"
 case "$command" in
   up)
+    prepare_runtime
     docker compose up -d --build
     wait_until_ready
     ;;
   run)
+    prepare_runtime
     docker compose up -d --build
     wait_until_ready
-    docker compose exec -T "$SERVICE" bash scripts/run-all.bash
+    for step in "${STEPS[@]}"; do
+      printf '\n===== %s =====\n' "$step"
+      docker compose exec -T "$SERVICE" bash "$step"
+    done
+    printf '\nAll automated checks passed. Runtime artifacts are in .local/evidence/.\n'
     ;;
   shell)
     docker compose exec "$SERVICE" bash

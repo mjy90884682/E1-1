@@ -1,13 +1,19 @@
 #!/bin/bash
 set -Eeuo pipefail
 source /workspace/scripts/lib.bash
-begin_evidence "20-docker-basics"
+begin_validation "20-environment-and-docker"
 for name in lab-hello lab-ubuntu-once lab-ubuntu; do cleanup_container "$name"; done
 
 trap 'cleanup_container lab-hello; cleanup_container lab-ubuntu-once; cleanup_container lab-ubuntu' EXIT
 
-section "Installation and daemon"
+section "Operating system, shell, and tool versions"
+run cat /etc/os-release
+run bash --version
 run docker --version
+run docker compose version
+run git --version
+
+section "Installation and daemon"
 run docker info
 
 section "hello-world image and container"

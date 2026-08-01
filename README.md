@@ -36,7 +36,7 @@ bash scripts/30-custom-image.bash
 host (Docker/OrbStack)
 └── workstation (privileged DinD outer container)
     ├── /workspace              # 이 저장소
-    ├── /mnt/host-bind-mount-volume # 실제 호스트 bind-mount-source/
+    ├── /mnt/host-bind-mount-volume # 실제 호스트 volumes/bind-mount/
     ├── Docker daemon           # 실습 이미지/컨테이너/볼륨
     ├── .local/evidence/        # ignored runtime output
     └── scripts/*.bash          # 실행 가능한 기술 문서
@@ -50,17 +50,40 @@ host (Docker/OrbStack)
   내용을 중복하므로 저장소에 커밋하지 않고 CI 출력으로만 보존합니다.
 - 주소창 포함 브라우저 증거는 실제 Chromium/Xvfb 화면에서 자동 생성해 검토된
   golden file과 binary diff합니다.
-- 바인드 마운트는 실제 호스트 `./bind-mount-source`를 outer container의
+- 바인드 마운트는 실행 시 생성한 실제 호스트 `./volumes/bind-mount`를 outer container의
   `/mnt/host-bind-mount-volume`에 연결하고, nested container가 그 outer 경로를
   다시 마운트하는 2단 구조입니다.
+
+## 파일 구성과 존재 이유
+
+| 파일 | 독립 파일인 이유 |
+|---|---|
+| `README.md` | GitHub 제출 화면에서 전체 설계와 검증 진입점을 제공 |
+| `.gitignore` | 소스와 재생성 가능한 `.local/`, `volumes/`를 분리 |
+| `compose.yaml` | outer DinD의 build, 권한, 포트, 저장소 연결을 선언 |
+| `lab.bash` | 런타임 디렉터리 생성과 단계 순서를 소유하는 단일 사용자 인터페이스 |
+| `app/Dockerfile` | 과제에서 직접 작성을 요구한 커스텀 이미지 recipe |
+| `app/index.html` | 이미지에 포함되는 실제 웹 서버 콘텐츠 |
+| `scripts/lib.bash` | 모든 검증 단계의 출력 형식, HTTP 대기, cleanup 중복 제거 |
+| `scripts/10-cli-and-permissions.bash` | 파일 조작과 권한 요구사항을 독립 재실행 |
+| `scripts/20-environment-and-docker.bash` | 실행 환경과 Docker 기본 운영을 한 번만 점검 |
+| `scripts/30-custom-image.bash` | 이미지 build, port mapping, HTTP 검증 |
+| `scripts/40-storage.bash` | bind mount와 named volume의 서로 연결된 저장소 검증 |
+| `scripts/50-git.bash` | disposable outer 환경의 Git 설정과 remote 검증 |
+| `scripts/60-browser-evidence.bash` | 실제 브라우저 캡처와 binary regression의 원자적 절차 |
+| `tests/browser/README.md` | 버전·raster 입력 고정처럼 비직관적인 결정의 근거 |
+| `tests/expected/browser-with-address-bar.png` | 명시적 제출 증거이자 검토된 regression golden |
+
+빈 디렉터리를 보존하기 위한 `.gitkeep`은 두지 않습니다. `volumes/`와 `.local/`은
+`lab.bash`가 필요할 때 만들며, 삭제해도 다음 실행에서 복구됩니다.
 
 ## 수행 체크리스트
 
 - [x] 터미널 기본 조작 (`scripts/10-cli-and-permissions.bash`)
 - [x] 파일·디렉터리 권한 변경 전후 비교 (`scripts/10-cli-and-permissions.bash`)
-- [x] Docker 버전·데몬 점검 (`scripts/20-docker-basics.bash`)
-- [x] 이미지/컨테이너/로그/stats 운영 명령 (`scripts/20-docker-basics.bash`)
-- [x] hello-world 및 Ubuntu 컨테이너 실습 (`scripts/20-docker-basics.bash`)
+- [x] 실행 환경과 Docker 버전·데몬 점검 (`scripts/20-environment-and-docker.bash`)
+- [x] 이미지/컨테이너/로그/stats 운영 명령 (`scripts/20-environment-and-docker.bash`)
+- [x] hello-world 및 Ubuntu 컨테이너 실습 (`scripts/20-environment-and-docker.bash`)
 - [x] 커스텀 NGINX 이미지 빌드·실행 (`scripts/30-custom-image.bash`)
 - [x] 포트 매핑과 curl 검증 (`scripts/30-custom-image.bash`)
 - [x] 실제 호스트를 관통하는 바인드 마운트 변경 반영 (`scripts/40-storage.bash`)
@@ -77,9 +100,8 @@ README에 명령 출력을 복제하지 않습니다. 아래 스크립트가 수
 
 | 검증 대상 | 실행 문서 | 주요 assertion |
 |---|---|---|
-| OS, shell, Docker, Git | [`scripts/00-environment.bash`](scripts/00-environment.bash) | 명령 성공 |
 | CLI와 권한 | [`scripts/10-cli-and-permissions.bash`](scripts/10-cli-and-permissions.bash) | `600→644`, `700→755` |
-| Docker 기본 운영 | [`scripts/20-docker-basics.bash`](scripts/20-docker-basics.bash) | foreground/exec, logs, stats |
+| 실행 환경과 Docker 운영 | [`scripts/20-environment-and-docker.bash`](scripts/20-environment-and-docker.bash) | 버전, daemon, foreground/exec, logs, stats |
 | 이미지와 포트 | [`scripts/30-custom-image.bash`](scripts/30-custom-image.bash) | HTTP 200, image/container 상태 |
 | 마운트와 볼륨 | [`scripts/40-storage.bash`](scripts/40-storage.bash) | 즉시 변경 반영, 삭제 후 데이터 유지 |
 | Git | [`scripts/50-git.bash`](scripts/50-git.bash) | 필수 설정과 remote |
@@ -121,7 +143,7 @@ VS Code GitHub 로그인은 인증 UI이므로 자동화하거나 토큰을 캡�
 - 문제: nested container에 호스트 경로를 연결했지만 파일이 비어 있음
 - 원인 가설: bind source를 해석하는 주체는 Docker CLI가 아니라 DinD daemon임
 - 확인: outer container에서 해당 절대 경로의 존재 여부 확인
-- 해결: 실제 호스트 `./bind-mount-source`를 outer container의 `/mnt/host-bind-mount-volume`에 연결하고 nested container에는
+- 해결: 실제 호스트 `./volumes/bind-mount`를 outer container의 `/mnt/host-bind-mount-volume`에 연결하고 nested container에는
   동일한 `/mnt/host-bind-mount-volume`을 연결
 
 ### 2. 종료한 컨테이너의 데이터가 사라짐

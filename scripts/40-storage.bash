@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 source /workspace/scripts/lib.bash
-begin_evidence "40-storage"
+begin_validation "40-storage"
 
 readonly HOST_BIND_DIR="/mnt/host-bind-mount-volume"
 
@@ -9,7 +9,7 @@ trap 'cleanup_container bind-web; cleanup_container volume-before; cleanup_conta
 for name in bind-web volume-before volume-after; do cleanup_container "$name"; done
 
 section "Two-hop bind mount reflects a real host-side change"
-# 실제 호스트 ./bind-mount-source
+# 실제 호스트 ./volumes/bind-mount
 #   -> outer DinD /mnt/host-bind-mount-volume
 #   -> nested NGINX /usr/share/nginx/html
 # 세 경로는 같은 파일을 바라본다. index.html은 실행 산출물이라 Git에서 제외한다.

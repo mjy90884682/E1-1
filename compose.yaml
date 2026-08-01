@@ -4,7 +4,10 @@ services:
   workstation:
     build:
       context: .
-      dockerfile: workstation.Dockerfile
+      dockerfile_inline: |
+        FROM docker:28-dind
+        RUN apk add --no-cache bash coreutils curl file git jq shadow
+        WORKDIR /workspace
     privileged: true
     working_dir: /workspace
     environment:
@@ -17,7 +20,7 @@ services:
     volumes:
       - .:/workspace
       # 실제 호스트에서 시작해 nested container까지 이어지는 bind source.
-      - ./bind-mount-source:/mnt/host-bind-mount-volume
+      - ./volumes/bind-mount:/mnt/host-bind-mount-volume
       - dind-data:/var/lib/docker
     healthcheck:
       test: ["CMD", "docker", "info"]

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 source /workspace/scripts/lib.bash
-begin_evidence "50-git"
+begin_validation "50-git"
 
 section "Disposable workstation Git configuration"
 # 실제 제출 전 LAB_GIT_NAME/LAB_GIT_EMAIL을 .env로 주입할 수 있다.

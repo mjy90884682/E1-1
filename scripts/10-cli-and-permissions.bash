@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 source /workspace/scripts/lib.bash
-begin_evidence "10-cli-and-permissions"
+begin_validation "10-cli-and-permissions"
 
 # 매번 같은 결과를 얻도록 격리된 임시 디렉터리를 새로 만든다.
 demo_dir="$(mktemp -d /tmp/workstation-cli.XXXXXX)"

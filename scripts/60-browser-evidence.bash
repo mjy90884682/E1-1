@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 source /workspace/scripts/lib.bash
-begin_evidence "60-browser-evidence"
+begin_validation "60-browser-evidence"
 
 readonly BROWSER_IMAGE="selenium/standalone-chromium@sha256:ddcd01e43742e92eaeb3bc114a01f3e8d6b5afa326ac75aefd57a198d0d20a42"
 readonly BROWSER_VERSION="138.0.7204.183"

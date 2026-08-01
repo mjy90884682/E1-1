@@ -1,8 +1,6 @@
 #!/bin/bash
 
-readonly REPO_ROOT="/workspace"
-
-begin_evidence() {
+begin_validation() {
   local name="$1"
   printf '# Validation: %s\n' "$name"
 }
