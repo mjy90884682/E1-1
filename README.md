@@ -111,17 +111,24 @@ VS Code GitHub 로그인 화면은 최종 제출 전에 추가합니다.
 
 ## 트러블슈팅 기록
 
-### 1. DinD 안의 바인드 마운트 파일이 보이지 않음
+### 1. 컨테이너 실행 직후 `curl: (56)` 발생
 
-- 문제: nested container에 호스트 경로를 연결했지만 파일이 비어 있음
-- 원인 가설: bind source를 해석하는 주체는 Docker CLI가 아니라 DinD daemon임
-- 확인: outer container에서 해당 절대 경로의 존재 여부 확인
-- 해결: 실제 호스트 `./volumes/bind-mount`를 outer container의 `/mnt/host-bind-mount-volume`에 연결하고 nested container에는
-  동일한 `/mnt/host-bind-mount-volume`을 연결
+- 문제: NGINX 컨테이너는 실행 중이지만 첫 HTTP 요청이 connection reset으로 실패
+- 가설: `docker run -d` 성공과 애플리케이션의 요청 가능 시점은 다름
+- 확인: 실패 시점의 health status가 `starting`이고 잠시 후 같은 요청은 성공
+- 해결: `wait_for_http`와 `wait_for_container_health`로 readiness를 확인한 뒤 응답 검증
 
-### 2. 종료한 컨테이너의 데이터가 사라짐
+### 2. DinD에서 Git `dubious ownership` 발생
 
-- 문제: 새 컨테이너에서 이전 파일을 찾을 수 없음
-- 원인 가설: 파일을 컨테이너 writable layer에만 저장함
-- 확인: 동일 named volume을 연결했는지 `docker inspect`로 확인
-- 해결: named volume을 생성해 두 컨테이너의 `/data`에 차례로 연결하고 파일 유지 검증
+- 문제: outer container에서 `/workspace`의 `git status`가 거부됨
+- 가설: 프로세스 사용자는 root지만 bind-mounted 저장소 소유자는 host UID임
+- 확인: outer의 `id -u`와 `stat -c '%u' /workspace` 결과가 다름
+- 해결: 모든 저장소를 허용하지 않고 `safe.directory=/workspace`만 지정
+
+### 3. 동일 화면의 PNG hash가 간헐적으로 달라짐
+
+- 문제: 눈으로 같은 주소창 캡처가 binary comparison에서 실패
+- 가설: 페이지가 아니라 Xvfb 또는 window manager의 동적 픽셀이 포함됨
+- 확인: PNG를 raw RGB로 디코딩해 비교한 결과 우측 경계 `(1359, 25)` 한 픽셀만 변동
+- 해결: mouse cursor, 우측 7px window 경계와 하단 clock panel을 캡처에서 제외하고
+  세 번의 독립 브라우저 세션에서 동일 SHA-256 확인
