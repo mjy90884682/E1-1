@@ -8,28 +8,30 @@ begin_validation "30-custom-image"
 cleanup_container workstation-web
 
 section "Build custom NGINX image"
-run docker build --tag workstation-web:1.0 /workspace/app
-run docker image inspect workstation-web:1.0 \
+docker build --tag workstation-web:1.0 /workspace/app
+docker image inspect workstation-web:1.0 \
   --format 'base-derived image={{.RepoTags}} exposed={{json .Config.ExposedPorts}}'
-run assert_eq "image title label" "codyssey-workstation-web" \
+assert_eq "image title label" "codyssey-workstation-web" \
   "$(docker image inspect workstation-web:1.0 \
     --format '{{index .Config.Labels "org.opencontainers.image.title"}}')"
-run assert_contains "image healthcheck" \
+assert_contains "image healthcheck" \
   "$(docker image inspect workstation-web:1.0 \
     --format '{{json .Config.Healthcheck.Test}}')" \
   "127.0.0.1:80"
 
 section "Run with host-to-container port mapping"
 # outer container의 8080은 Compose가 실제 호스트의 8080으로 다시 전달한다.
-run docker run -d --name workstation-web -p 8080:80 workstation-web:1.0
-run docker ps --filter name=workstation-web
+docker run -d --name workstation-web -p 8080:80 workstation-web:1.0
+docker ps --filter name=workstation-web
 
-run wait_for_http http://127.0.0.1:8080/
-run wait_for_container_health workstation-web
+wait_for_http http://127.0.0.1:8080/
+wait_for_container_health workstation-web
 response="$(curl --fail --silent --show-error http://127.0.0.1:8080/)"
-run assert_contains "custom page response" "$response" \
+assert_contains "custom page response" "$response" \
   "It works reproducibly."
-run assert_contains "published port" "$(docker port workstation-web 80/tcp)" \
+assert_contains "published port" "$(docker port workstation-web 80/tcp)" \
   ":8080"
-run docker logs workstation-web
-run docker stats --no-stream workstation-web
+docker logs workstation-web
+docker stats --no-stream workstation-web
+
+end_validation

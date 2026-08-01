@@ -7,6 +7,18 @@ readonly UBUNTU_IMAGE="ubuntu:24.04@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0
 begin_validation() {
   local name="$1"
   printf '# Validation: %s\n' "$name"
+  trap 'trace_command "$BASH_COMMAND"' DEBUG
+}
+
+end_validation() {
+  trap - DEBUG
+}
+
+trace_command() {
+  case "$1" in
+    section\ * | end_validation | trap\ * | \[\[\ * ) return 0 ;;
+  esac
+  printf '\n$ %s\n' "$1" >&2
 }
 
 section() {
@@ -37,13 +49,6 @@ assert_contains() {
     return 1
   fi
   printf 'ASSERT PASS: %s contains %q\n' "$label" "$expected_fragment"
-}
-
-run() {
-  printf '\n$'
-  printf ' %q' "$@"
-  printf '\n'
-  "$@"
 }
 
 cleanup_container() {

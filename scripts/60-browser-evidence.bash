@@ -19,14 +19,44 @@ readonly ACTUAL="$ACTUAL_DIR/browser-with-address-bar.png"
 cleanup_browser() {
   cleanup_container "$BROWSER_CONTAINER"
 }
+
+create_browser_session() {
+  local payload
+  payload='{
+    "capabilities": {
+      "alwaysMatch": {
+        "browserName": "chrome",
+        "goog:chromeOptions": {
+          "args": [
+            "--window-position=0,0",
+            "--window-size=1365,768",
+            "--force-device-scale-factor=1",
+            "--disable-gpu",
+            "--disable-background-networking",
+            "--disable-default-apps",
+            "--disable-extensions",
+            "--disable-features=Translate,MediaRouter",
+            "--disable-sync",
+            "--no-first-run"
+          ]
+        }
+      }
+    }
+  }'
+  curl --fail --silent \
+    -H 'Content-Type: application/json' \
+    --data "$payload" \
+    http://127.0.0.1:4444/session
+}
+
 trap cleanup_browser EXIT
 cleanup_browser
 mkdir -p "$ACTUAL_DIR" "$DIFF_DIR"
 
 section "Pinned browser environment"
-run docker pull "$BROWSER_IMAGE"
+docker pull "$BROWSER_IMAGE"
 actual_version="$(docker run --rm --entrypoint chromium "$BROWSER_IMAGE" --version)"
-run test "$actual_version" = "Chromium $BROWSER_VERSION built on Debian GNU/Linux 13 (trixie)"
+test "$actual_version" = "Chromium $BROWSER_VERSION built on Debian GNU/Linux 13 (trixie)"
 
 cat >"$ACTUAL_DIR/environment.txt" <<EOF
 image=$BROWSER_IMAGE
@@ -38,11 +68,11 @@ timezone=UTC
 device_scale_factor=1
 rasterizer=software
 EOF
-run cat "$ACTUAL_DIR/environment.txt"
+cat "$ACTUAL_DIR/environment.txt"
 
 section "Start a real browser on Xvfb"
 # --network host는 nested Chromium에서 outer DinD의 localhost:8080을 그대로 보이게 한다.
-run docker run -d --name "$BROWSER_CONTAINER" --network host \
+docker run -d --name "$BROWSER_CONTAINER" --network host \
   --shm-size 2g \
   --mount "type=bind,source=$ACTUAL_DIR,target=/output" \
   -e SE_SCREEN_WIDTH=1365 \
@@ -55,47 +85,23 @@ for ((attempt = 1; attempt <= 30; attempt++)); do
   curl --fail --silent http://127.0.0.1:4444/status >/dev/null && break
   sleep 1
 done
-run curl --fail --silent http://127.0.0.1:4444/status
+curl --fail --silent http://127.0.0.1:4444/status
 
-session_payload='{
-  "capabilities": {
-    "alwaysMatch": {
-      "browserName": "chrome",
-      "goog:chromeOptions": {
-        "args": [
-          "--window-position=0,0",
-          "--window-size=1365,768",
-          "--force-device-scale-factor=1",
-          "--disable-gpu",
-          "--disable-background-networking",
-          "--disable-default-apps",
-          "--disable-extensions",
-          "--disable-features=Translate,MediaRouter",
-          "--disable-sync",
-          "--no-first-run"
-        ]
-      }
-    }
-  }
-}'
-session_response="$(curl --fail --silent \
-  -H 'Content-Type: application/json' \
-  --data "$session_payload" \
-  http://127.0.0.1:4444/session)"
+session_response="$(create_browser_session)"
 session_id="$(jq -er '.value.sessionId' <<<"$session_response")"
 
-run curl --fail --silent \
+curl --fail --silent \
   -H 'Content-Type: application/json' \
   --data '{"url":"http://localhost:8080"}' \
   "http://127.0.0.1:4444/session/$session_id/url"
-run test "$(curl --fail --silent \
+test "$(curl --fail --silent \
   "http://127.0.0.1:4444/session/$session_id/url" | jq -r '.value')" = \
   "http://localhost:8080/"
 
 # 페이지 페인트가 끝난 뒤 Xvfb framebuffer 전체를 캡처하므로 주소창도 포함된다.
 sleep 1
-run rm -f "$ACTUAL"
-run docker exec --user root "$BROWSER_CONTAINER" ffmpeg \
+rm -f "$ACTUAL"
+docker exec --user root "$BROWSER_CONTAINER" ffmpeg \
   -loglevel error \
   -f x11grab \
   -draw_mouse 0 \
@@ -107,12 +113,12 @@ run docker exec --user root "$BROWSER_CONTAINER" ffmpeg \
   -compression_level 9 \
   -pred mixed \
   -y /output/browser-with-address-bar.png
-run test -s "$ACTUAL"
-run sha256sum "$ACTUAL"
+test -s "$ACTUAL"
+sha256sum "$ACTUAL"
 
 section "Binary regression"
 if [[ "${1:-}" == "--update-golden" ]]; then
-  run cp "$ACTUAL" "$EXPECTED"
+  cp "$ACTUAL" "$EXPECTED"
   echo "Golden screenshot updated explicitly."
 elif [[ -f "$EXPECTED" ]]; then
   if ! cmp --silent "$EXPECTED" "$ACTUAL"; then
@@ -121,7 +127,7 @@ elif [[ -f "$EXPECTED" ]]; then
     echo "Binary screenshot mismatch; inspect .local/evidence/diff/." >&2
     exit 1
   fi
-  run sha256sum "$EXPECTED"
+  sha256sum "$EXPECTED"
   echo "Screenshot is byte-for-byte identical to the golden file."
 else
   echo "Golden screenshot is absent." >&2
@@ -129,3 +135,5 @@ else
   echo "  bash scripts/60-browser-evidence.bash --update-golden" >&2
   exit 1
 fi
+
+end_validation

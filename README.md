@@ -2,12 +2,11 @@
 
 [![verify](https://github.com/mjy90884682/E1-1/actions/workflows/verify.yml/badge.svg)](https://github.com/mjy90884682/E1-1/actions/workflows/verify.yml)
 
-Docker-in-Docker(DinD) 안에서 개발 워크스테이션 과제를 처음부터 끝까지 재현하는
-실행형 문서입니다. 명령을 README에 복사해 나열하는 대신, 주석이 포함된 단계별
-셸 스크립트를 단일 진실 공급원(single source of truth)으로 사용합니다.
+Docker-in-Docker(DinD) 안에서 개발 워크스테이션 과제를 처음부터 끝까지 재현합니다.
+outer container에서 실행되는 `scripts/*.bash`가 단계별 실행형 문서입니다.
 
-> 단계별 Bash 파일 자체가 명령, 출력 조건, 실패 조건을 포함하는 실행형 기술
-> 문서입니다. `bash lab.bash run`의 종료 코드가 전체 검증 결과입니다.
+호스트의 `lab.bash`는 DinD 시작과 실행 순서만 담당하며, 종료 코드로 전체 결과를
+전달합니다.
 
 ## 빠른 시작
 
