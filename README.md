@@ -30,6 +30,24 @@ bash scripts/30-custom-image.bash
 `bash lab.bash reset`은 컨테이너와 실습용 Docker 볼륨을 삭제하므로 의도적으로 실행해야
 합니다. 일반적인 `down`은 DinD 엔진의 데이터를 보존합니다.
 
+## 실행 환경
+
+| 구분 | 검증 환경 |
+|---|---|
+| Host OS | Ubuntu 26.04 LTS |
+| Host shell | Bash (`/bin/bash`) |
+| Host terminal | Docker Compose를 호출하는 CLI terminal |
+| Host Docker | 29.1.3 |
+| Host Docker Compose | 2.40.3 |
+| Reproducible OS | Alpine Linux 3.22 (outer DinD) |
+| Reproducible shell | GNU Bash 5.2.37 |
+| Reproducible Docker | Client/Server 28.5.2 |
+| Reproducible Git | 2.49.1 |
+
+호스트 값은 이 저장소를 검증한 장비의 기록이며 필수 버전 제약이 아닙니다. 평가자가
+재현할 환경은 `compose.yaml`의 outer DinD 이미지와
+`scripts/20-environment-and-docker.bash`가 직접 확인합니다.
+
 ## 설계
 
 ```text
@@ -109,6 +127,23 @@ README에 명령 출력을 복제하지 않습니다. 아래 스크립트가 수
 
 브라우저 버전을 포함한 재현성 입력을 고정한 이유와 artifact lifecycle은
 [`tests/browser/README.md`](tests/browser/README.md)에 설명합니다.
+
+## 커스텀 이미지
+
+기존 베이스는 공식 `nginx:1.27-alpine` 이미지입니다. NGINX 설치 과정을 다시
+작성하지 않고 검증된 웹 서버 실행 계약을 상속하기 위해 선택했습니다.
+
+| 커스텀 포인트 | 목적 |
+|---|---|
+| OCI title/description label | 이미지 용도를 build 결과에서 식별 |
+| `app/index.html` 복사 | 기본 환영 페이지를 과제 전용 콘텐츠로 교체 |
+| HTTP healthcheck | 프로세스 존재가 아니라 실제 응답 가능 상태를 판정 |
+| `8080:80` port mapping | 격리된 container port를 outer/host에 공개 |
+
+`docker run`의 foreground 프로세스가 끝나면 컨테이너도 종료됩니다. 반면
+`sleep infinity`를 PID 1로 유지한 컨테이너에서 `docker exec`를 실행하면 별도
+프로세스만 추가되며 PID 1과 컨테이너 수명은 유지됩니다. 이 차이는
+`scripts/20-environment-and-docker.bash`가 `docker ps -a`로 전후 상태를 보여줍니다.
 
 ## 핵심 개념
 
