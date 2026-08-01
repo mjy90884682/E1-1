@@ -15,11 +15,20 @@ run git config --global --get user.name
 run git config --global --get user.email
 run git config --global --get init.defaultBranch
 run git config --global --list
+run assert_eq "Git user.name" "${LAB_GIT_NAME:?}" \
+  "$(git config --global --get user.name)"
+run assert_eq "Git user.email" "${LAB_GIT_EMAIL:?}" \
+  "$(git config --global --get user.email)"
+run assert_eq "Git default branch" "main" \
+  "$(git config --global --get init.defaultBranch)"
 
 section "Repository and remote"
 run git status --short --branch
 if git remote get-url origin >/dev/null 2>&1; then
   run git remote -v
+  run assert_contains "origin remote" "$(git remote get-url origin)" \
+    "github.com"
 else
-  echo "No origin remote yet; add the GitHub repository before final evidence collection."
+  echo "Origin remote is required." >&2
+  exit 1
 fi

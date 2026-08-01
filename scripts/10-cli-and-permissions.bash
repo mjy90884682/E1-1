@@ -24,9 +24,13 @@ run chmod 600 "$demo_dir/source/note.txt"
 run stat -c '%A %a %n' "$demo_dir/source/note.txt"
 run chmod 644 "$demo_dir/source/note.txt"
 run stat -c '%A %a %n' "$demo_dir/source/note.txt"
+run assert_eq "file mode" "644" \
+  "$(stat -c '%a' "$demo_dir/source/note.txt")"
 
 section "Directory permission: 700 to 755"
 run chmod 700 "$demo_dir/archive"
 run stat -c '%A %a %n' "$demo_dir/archive"
 run chmod 755 "$demo_dir/archive"
 run stat -c '%A %a %n' "$demo_dir/archive"
+run assert_eq "directory mode" "755" \
+  "$(stat -c '%a' "$demo_dir/archive")"
