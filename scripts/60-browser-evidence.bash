@@ -6,10 +6,11 @@ begin_validation "60-browser-evidence"
 readonly BROWSER_IMAGE="selenium/standalone-chromium@sha256:ddcd01e43742e92eaeb3bc114a01f3e8d6b5afa326ac75aefd57a198d0d20a42"
 readonly BROWSER_VERSION="138.0.7204.183"
 readonly BROWSER_CONTAINER="browser-evidence"
+# 브라우저 chrome도 golden의 픽셀이다. 이미지와 viewport를 고정하고, 변동하는
+# window-manager 우측 경계와 하단 clock panel은 캡처에서 제외한다.
 readonly DISPLAY_SIZE="1365x768"
-readonly CAPTURE_SIZE="1365x744"
-readonly CAPTURE_FILTER="1365:744"
-readonly COLOR_QUANTUM="16"
+readonly CAPTURE_SIZE="1358x744"
+readonly CAPTURE_FILTER="1358:744"
 readonly ACTUAL_DIR="/workspace/.local/evidence/actual"
 readonly DIFF_DIR="/workspace/.local/evidence/diff"
 readonly EXPECTED="/workspace/tests/expected/browser-with-address-bar.png"
@@ -36,7 +37,6 @@ locale=ko-KR
 timezone=UTC
 device_scale_factor=1
 rasterizer=software
-color_quantum=$COLOR_QUANTUM
 EOF
 run cat "$ACTUAL_DIR/environment.txt"
 
@@ -101,7 +101,7 @@ run docker exec --user root "$BROWSER_CONTAINER" ffmpeg \
   -draw_mouse 0 \
   -video_size "$DISPLAY_SIZE" \
   -i :99.0 \
-  -vf "crop=$CAPTURE_FILTER:0:0,lutrgb=r='min(255,floor((val+8)/$COLOR_QUANTUM)*$COLOR_QUANTUM)':g='min(255,floor((val+8)/$COLOR_QUANTUM)*$COLOR_QUANTUM)':b='min(255,floor((val+8)/$COLOR_QUANTUM)*$COLOR_QUANTUM)'" \
+  -vf "crop=$CAPTURE_FILTER:0:0" \
   -frames:v 1 \
   -threads 1 \
   -compression_level 9 \

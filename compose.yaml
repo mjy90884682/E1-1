@@ -19,7 +19,6 @@ services:
       - "8081:8081"
     volumes:
       - .:/workspace
-      # 실제 호스트에서 시작해 nested container까지 이어지는 bind source.
       - ./volumes/bind-mount:/mnt/host-bind-mount-volume
       - dind-data:/var/lib/docker
     healthcheck:
