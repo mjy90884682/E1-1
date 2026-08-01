@@ -1,0 +1,10 @@
+.env
+bind-mount-source/index.html
+
+# Generated evidence is reviewed and force-added intentionally.
+evidence/logs/*.log
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/
