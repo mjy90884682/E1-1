@@ -10,6 +10,7 @@ steps=(
   scripts/30-custom-image.bash
   scripts/40-storage.bash
   scripts/50-git.bash
+  scripts/60-browser-evidence.bash
 )
 
 for step in "${steps[@]}"; do
@@ -17,4 +18,4 @@ for step in "${steps[@]}"; do
   bash "$step"
 done
 
-printf '\nAll automated checks passed. Review evidence/logs before committing.\n'
+printf '\nAll automated checks passed. Runtime artifacts are in .local/evidence/.\n'

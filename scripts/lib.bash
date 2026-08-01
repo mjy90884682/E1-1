@@ -1,21 +1,18 @@
 #!/bin/bash
 
 readonly REPO_ROOT="/workspace"
-readonly EVIDENCE_DIR="$REPO_ROOT/evidence/logs"
 
 begin_evidence() {
   local name="$1"
-  mkdir -p "$EVIDENCE_DIR"
-  exec > >(tee "$EVIDENCE_DIR/$name.log") 2>&1
-  printf '# Generated at %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  printf '# Validation: %s\n' "$name"
 }
 
 section() {
   printf '\n## %s\n' "$1"
 }
 
-# 명령과 출력을 같은 로그에 남긴다. 인수는 셸에서 이미 분리된 상태로 전달하므로
-# 문자열 eval을 사용하지 않는다.
+# 실행형 문서와 CI 출력에서 명령과 결과를 함께 읽을 수 있게 한다. 인수는 셸에서
+# 이미 분리된 상태로 전달하므로 문자열 eval을 사용하지 않는다.
 run() {
   printf '\n$'
   printf ' %q' "$@"

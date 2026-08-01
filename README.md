@@ -4,9 +4,10 @@ Docker-in-Docker(DinD) 안에서 개발 워크스테이션 과제를 처음부�
 실행형 문서입니다. 명령을 README에 복사해 나열하는 대신, 주석이 포함된 단계별
 셸 스크립트를 단일 진실 공급원(single source of truth)으로 사용합니다.
 
-> 현재 상태: **골격 작성 완료 / 실습 증거 미수집**
+> 현재 상태: **자동 검증 및 브라우저 golden 검토 완료**
 >
-> 체크 표시는 `bash lab.bash run`을 실행하고 생성된 로그와 수동 증거를 검토한 뒤 갱신합니다.
+> 단계별 Bash 파일 자체가 명령, 출력 조건, 실패 조건을 포함하는 실행형 기술
+> 문서입니다. `bash lab.bash run`의 종료 코드가 전체 검증 결과입니다.
 
 ## 빠른 시작
 
@@ -37,49 +38,55 @@ host (Docker/OrbStack)
     ├── /workspace              # 이 저장소
     ├── /mnt/host-bind-mount-volume # 실제 호스트 bind-mount-source/
     ├── Docker daemon           # 실습 이미지/컨테이너/볼륨
-    └── scripts/*.bash            # 실행 가능한 기술 문서
-        └── nested containers   # hello-world, ubuntu, custom nginx
+    ├── .local/evidence/        # ignored runtime output
+    └── scripts/*.bash          # 실행 가능한 기술 문서
+        └── nested containers   # hello-world, ubuntu, nginx, Chromium
 ```
 
 - 호스트 환경을 오염시키지 않도록 Git 설정, 권한 실습, 컨테이너 운영을 DinD 안에
   격리합니다.
 - `docker compose exec` 대신 `bash lab.bash`를 공개 인터페이스로 두어 실행 방법을 고정합니다.
-- 각 스크립트는 `evidence/logs/<단계>.log`에 명령과 출력을 함께 남깁니다.
-- 자동화할 수 없는 브라우저 주소창과 VS Code/GitHub 로그인은
-  `evidence/screenshots/`에 별도로 수집합니다.
+- 스크립트는 명령을 출력하고 결과를 assertion으로 검증합니다. 생성 로그는 같은
+  내용을 중복하므로 저장소에 커밋하지 않고 CI 출력으로만 보존합니다.
+- 주소창 포함 브라우저 증거는 실제 Chromium/Xvfb 화면에서 자동 생성해 검토된
+  golden file과 binary diff합니다.
 - 바인드 마운트는 실제 호스트 `./bind-mount-source`를 outer container의
   `/mnt/host-bind-mount-volume`에 연결하고, nested container가 그 outer 경로를
   다시 마운트하는 2단 구조입니다.
 
 ## 수행 체크리스트
 
-- [ ] 터미널 기본 조작 (`scripts/10-cli-and-permissions.bash`)
-- [ ] 파일·디렉터리 권한 변경 전후 비교 (`scripts/10-cli-and-permissions.bash`)
-- [ ] Docker 버전·데몬 점검 (`scripts/20-docker-basics.bash`)
-- [ ] 이미지/컨테이너/로그/stats 운영 명령 (`scripts/20-docker-basics.bash`)
-- [ ] hello-world 및 Ubuntu 컨테이너 실습 (`scripts/20-docker-basics.bash`)
-- [ ] 커스텀 NGINX 이미지 빌드·실행 (`scripts/30-custom-image.bash`)
-- [ ] 포트 매핑과 curl 검증 (`scripts/30-custom-image.bash`)
-- [ ] 실제 호스트를 관통하는 바인드 마운트 변경 반영 (`scripts/40-storage.bash`)
-- [ ] Docker 볼륨 영속성 (`scripts/40-storage.bash`)
-- [ ] Git 설정 검증 (`scripts/50-git.bash`)
-- [ ] GitHub/VS Code 연동 수동 증거 (`evidence/screenshots/README.md`)
+- [x] 터미널 기본 조작 (`scripts/10-cli-and-permissions.bash`)
+- [x] 파일·디렉터리 권한 변경 전후 비교 (`scripts/10-cli-and-permissions.bash`)
+- [x] Docker 버전·데몬 점검 (`scripts/20-docker-basics.bash`)
+- [x] 이미지/컨테이너/로그/stats 운영 명령 (`scripts/20-docker-basics.bash`)
+- [x] hello-world 및 Ubuntu 컨테이너 실습 (`scripts/20-docker-basics.bash`)
+- [x] 커스텀 NGINX 이미지 빌드·실행 (`scripts/30-custom-image.bash`)
+- [x] 포트 매핑과 curl 검증 (`scripts/30-custom-image.bash`)
+- [x] 실제 호스트를 관통하는 바인드 마운트 변경 반영 (`scripts/40-storage.bash`)
+- [x] Docker 볼륨 영속성 (`scripts/40-storage.bash`)
+- [x] Git 설정 검증 (`scripts/50-git.bash`)
+- [x] 주소창 포함 Chromium binary regression (`scripts/60-browser-evidence.bash`)
+- [ ] VS Code GitHub 로그인 화면(최종 제출 시 수동 확인)
 
-## 실행 환경 및 결과
+## 실행형 기술 문서와 검증
 
-자동 수집 결과는 실행 후 다음 위치에서 확인합니다.
+README에 명령 출력을 복제하지 않습니다. 아래 스크립트가 수행 명령을 출력하고,
+기대 결과가 다르면 즉시 non-zero로 종료합니다. 따라서 문서와 실제 검증 절차가
+서로 달라지는 문제를 방지합니다.
 
-| 검증 대상 | 실행 문서 | 결과 |
+| 검증 대상 | 실행 문서 | 주요 assertion |
 |---|---|---|
-| OS, shell, Docker, Git | [`scripts/00-environment.bash`](scripts/00-environment.bash) | `evidence/logs/00-environment.log` |
-| CLI와 권한 | [`scripts/10-cli-and-permissions.bash`](scripts/10-cli-and-permissions.bash) | `evidence/logs/10-cli-and-permissions.log` |
-| Docker 기본 운영 | [`scripts/20-docker-basics.bash`](scripts/20-docker-basics.bash) | `evidence/logs/20-docker-basics.log` |
-| 이미지와 포트 | [`scripts/30-custom-image.bash`](scripts/30-custom-image.bash) | `evidence/logs/30-custom-image.log` |
-| 마운트와 볼륨 | [`scripts/40-storage.bash`](scripts/40-storage.bash) | `evidence/logs/40-storage.log` |
-| Git | [`scripts/50-git.bash`](scripts/50-git.bash) | `evidence/logs/50-git.log` |
+| OS, shell, Docker, Git | [`scripts/00-environment.bash`](scripts/00-environment.bash) | 명령 성공 |
+| CLI와 권한 | [`scripts/10-cli-and-permissions.bash`](scripts/10-cli-and-permissions.bash) | `600→644`, `700→755` |
+| Docker 기본 운영 | [`scripts/20-docker-basics.bash`](scripts/20-docker-basics.bash) | foreground/exec, logs, stats |
+| 이미지와 포트 | [`scripts/30-custom-image.bash`](scripts/30-custom-image.bash) | HTTP 200, image/container 상태 |
+| 마운트와 볼륨 | [`scripts/40-storage.bash`](scripts/40-storage.bash) | 즉시 변경 반영, 삭제 후 데이터 유지 |
+| Git | [`scripts/50-git.bash`](scripts/50-git.bash) | 필수 설정과 remote |
+| 브라우저 UI | [`scripts/60-browser-evidence.bash`](scripts/60-browser-evidence.bash) | 주소창 URL, PNG binary equality |
 
-로그는 실행 환경에 따라 달라지는 산출물이므로 첫 골격 커밋에는 포함하지 않습니다.
-검증 실행 후 민감정보를 검사한 다음 별도 커밋으로 추가합니다.
+브라우저 버전을 포함한 재현성 입력을 고정한 이유와 artifact lifecycle은
+[`tests/browser/README.md`](tests/browser/README.md)에 설명합니다.
 
 ## 핵심 개념
 
@@ -96,14 +103,16 @@ host (Docker/OrbStack)
 - **Git/GitHub**: Git은 로컬 변경 이력을 관리하는 도구이고 GitHub는 저장소 공유,
   리뷰, 이슈 등 원격 협업을 제공하는 플랫폼입니다.
 
-## 수동 증거
+## UI 증거
 
-자동 검증 후 아래 이미지를 추가하고 표의 상태를 갱신합니다.
+주소창과 응답 화면은 headless page screenshot이 아니라 Xvfb에서 실행한 실제 Chromium
+창 전체를 캡처합니다. 검토 완료 후 아래 golden image가 기술 문서의 제출 증거이자
+binary regression 기준이 됩니다.
 
-1. `http://localhost:8080` 주소창과 응답 화면
-2. VS Code의 GitHub 로그인 및 원격 저장소 연결 화면
+![주소창을 포함한 포트 매핑 증거](tests/expected/browser-with-address-bar.png)
 
-캡처 전 토큰, 이메일, 인증 코드, 개인키, 불필요한 사용자 경로를 가립니다.
+VS Code GitHub 로그인은 인증 UI이므로 자동화하거나 토큰을 캡처하지 않습니다. 최종
+제출 시 계정 식별자와 알림을 가린 화면을 별도로 검토합니다.
 
 ## 트러블슈팅 기록
 
@@ -127,11 +136,11 @@ host (Docker/OrbStack)
 
 ## 보안 점검
 
-커밋 전 다음 패턴을 로그와 이미지 메타데이터에서 확인합니다.
+커밋 전 tracked 문서와 승인할 golden image 주변 파일에서 다음 패턴을 확인합니다.
 
 ```bash
-rg -n -i '(token|password|passwd|secret|authorization:|private key)' evidence
+git grep -n -i -E '(token|password|passwd|secret|authorization:|private key)'
 ```
 
-Git 설정 로그에는 값이 노출될 수 있는 `--list` 전체 대신 과제에 필요한 키만
+Git 설정 출력에는 값이 노출될 수 있는 `--list` 전체 대신 과제에 필요한 키만
 선택적으로 출력합니다.

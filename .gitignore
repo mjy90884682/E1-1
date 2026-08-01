@@ -1,8 +1,9 @@
 .env
 bind-mount-source/index.html
 
-# Generated evidence is reviewed and force-added intentionally.
-evidence/logs/*.log
+# Runtime output is disposable. Submission artifacts promoted to tests/expected
+# are reviewed and tracked explicitly.
+.local/
 
 # Editor and OS noise
 .DS_Store
