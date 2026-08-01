@@ -1,5 +1,7 @@
 # Reproducible Docker Workstation Lab
 
+[![verify](https://github.com/mjy90884682/E1-1/actions/workflows/verify.yml/badge.svg)](https://github.com/mjy90884682/E1-1/actions/workflows/verify.yml)
+
 Docker-in-Docker(DinD) 안에서 개발 워크스테이션 과제를 처음부터 끝까지 재현하는
 실행형 문서입니다. 명령을 README에 복사해 나열하는 대신, 주석이 포함된 단계별
 셸 스크립트를 단일 진실 공급원(single source of truth)으로 사용합니다.

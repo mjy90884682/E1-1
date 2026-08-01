@@ -17,8 +17,8 @@ section "Installation and daemon"
 run docker info
 
 section "hello-world image and container"
-run docker pull hello-world:latest
-run docker run --name lab-hello hello-world:latest
+run docker pull "$HELLO_WORLD_IMAGE"
+run docker run --name lab-hello "$HELLO_WORLD_IMAGE"
 run docker logs lab-hello
 run assert_contains "hello-world output" "$(docker logs lab-hello)" \
   "Hello from Docker!"
@@ -33,7 +33,7 @@ cleanup_container lab-hello
 
 section "Ubuntu: foreground run versus exec on a running container"
 # foreground `docker run`의 주 프로세스가 끝나면 컨테이너도 종료된다.
-run docker run --name lab-ubuntu-once ubuntu:24.04 \
+run docker run --name lab-ubuntu-once "$UBUNTU_IMAGE" \
   bash -lc 'echo "foreground process"; ls / | head'
 run docker ps -a --filter name=lab-ubuntu-once
 run assert_eq "foreground container state" "exited" \
@@ -43,7 +43,7 @@ run assert_eq "foreground container exit code" "0" \
 cleanup_container lab-ubuntu-once
 
 # 장기 실행 중인 주 프로세스가 있을 때 exec는 별도 프로세스를 추가한다.
-run docker run -d --name lab-ubuntu ubuntu:24.04 sleep infinity
+run docker run -d --name lab-ubuntu "$UBUNTU_IMAGE" sleep infinity
 run docker exec lab-ubuntu bash -lc 'echo "exec process"; pwd; ls / | head'
 run assert_eq "container state after exec" "running" \
   "$(docker inspect --format '{{.State.Status}}' lab-ubuntu)"

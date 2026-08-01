@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile_inline: |
-        FROM docker:28-dind
+        FROM docker:28-dind@sha256:2a232a42256f70d78e3cc5d2b5d6b3276710a0de0596c145f627ecfae90282ac
         RUN apk add --no-cache bash coreutils curl file git jq shadow
         WORKDIR /workspace
     privileged: true

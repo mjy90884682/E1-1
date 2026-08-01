@@ -17,7 +17,7 @@ run test -d "$HOST_BIND_DIR"
 run cp /workspace/app/index.html "$HOST_BIND_DIR/index.html"
 run stat -c '%i %s %n' "$HOST_BIND_DIR/index.html"
 run docker run -d --name bind-web -p 8081:80 \
-  --mount "type=bind,source=$HOST_BIND_DIR,target=/usr/share/nginx/html,readonly" nginx:1.27-alpine
+  --mount "type=bind,source=$HOST_BIND_DIR,target=/usr/share/nginx/html,readonly" "$NGINX_IMAGE"
 run wait_for_http http://127.0.0.1:8081/
 before_response="$(curl --fail --silent http://127.0.0.1:8081/)"
 run assert_contains "bind response before change" "$before_response" \
@@ -37,7 +37,7 @@ section "Named volume survives container deletion"
 docker volume rm workstation-data >/dev/null 2>&1 || true
 run docker volume create workstation-data
 run docker run -d --name volume-before \
-  --mount type=volume,source=workstation-data,target=/data ubuntu:24.04 sleep infinity
+  --mount type=volume,source=workstation-data,target=/data "$UBUNTU_IMAGE" sleep infinity
 run docker exec volume-before sh -c 'printf "persistent-data\n" > /data/result.txt'
 run docker exec volume-before cat /data/result.txt
 run docker inspect volume-before --format '{{json .Mounts}}'
@@ -49,7 +49,7 @@ run assert_eq "data before deletion" "persistent-data" \
   "$(docker exec volume-before cat /data/result.txt)"
 run docker rm -f volume-before
 run docker run -d --name volume-after \
-  --mount type=volume,source=workstation-data,target=/data ubuntu:24.04 sleep infinity
+  --mount type=volume,source=workstation-data,target=/data "$UBUNTU_IMAGE" sleep infinity
 run docker exec volume-after cat /data/result.txt
 run assert_eq "data after recreation" "persistent-data" \
   "$(docker exec volume-after cat /data/result.txt)"
