@@ -69,7 +69,8 @@ DinD는 Git 설정, 권한 실습, 이미지, 컨테이너와 볼륨을 호스�
 - [x] Docker 볼륨 영속성 (`scripts/40-storage.bash`)
 - [x] Git 설정 검증 (`scripts/50-git.bash`)
 - [x] 주소창 포함 Chromium binary regression (`scripts/60-browser-evidence.bash`)
-- [ ] VS Code GitHub 로그인 화면(최종 제출 시 수동 확인)
+- [x] VS Code GitHub 로그인 및 제출 저장소 연동 증거
+  (`docs/submission/vscode-github-link.png`, `scripts/50-git.bash`)
 
 ## 커스텀 이미지
 
@@ -106,7 +107,12 @@ Chromium `138.0.7204.183`을 고정한 Xvfb 환경에서 주소창을 포함한 
 
 ![주소창을 포함한 포트 매핑 증거](tests/expected/browser-with-address-bar.png)
 
-VS Code GitHub 로그인 화면은 최종 제출 전에 추가합니다.
+### VS Code GitHub 연동
+
+아래 계정 메뉴로 VS Code의 GitHub 로그인 상태를 확인합니다. 현재 제출 저장소의
+GitHub 원격 연동은 `scripts/50-git.bash`가 검증합니다.
+
+![VS Code GitHub 로그인 및 제출 저장소 연동](docs/submission/vscode-github-link.png)
 
 ## 트러블슈팅 기록
 
